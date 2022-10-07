@@ -3,8 +3,15 @@ from django.http import HttpResponse
 from django.views.generic import TemplateView
 from csv_import.forms import CSV_Form
 from csv_import.models import Estudiante
-
+from os import remove
 # Create your views here.
+
+def guardar_datos_csv(arr):
+    for i in arr:
+        estudiante = Estudiante()
+        estudiante.nombre = i[0]
+        estudiante.matricula = i[1]
+        estudiante.save()
 
 def handle_uploaded_file(f):  
     with open('csv_import/static/upload/'+f.name, 'wb+') as destination:  
@@ -16,14 +23,9 @@ def handle_uploaded_file(f):
             s = linea.split(',')
             s[1] = s[1].rstrip()
             arr.append(s)
-    return arr
+    guardar_datos_csv(arr)
+    remove('csv_import/static/upload/'+f.name)
 
-def insertar_algo(arr):
-    for i in arr:
-        estudiante = Estudiante()
-        estudiante.nombre = i[0]
-        estudiante.matricula = i[1]
-        estudiante.save()
     
 
 class IndexView(TemplateView):
@@ -33,9 +35,8 @@ def index(request):
         if request.method == 'POST':
             csv_import = CSV_Form(request.POST, request.FILES)
             if csv_import.is_valid():
-                arr = handle_uploaded_file(request.FILES['file'])
-                insertar_algo(arr)
-                return HttpResponse(arr)  
+                handle_uploaded_file(request.FILES['file'])
+                return HttpResponse("Database success")  
             else:
                 csv_import = CSV_Form()
                 return render(request,'index.html',{'form':csv_import})
